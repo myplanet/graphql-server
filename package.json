@@ -1,0 +1,39 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "engines": {
+    "node": "12.16.x"
+  },
+  "scripts": {
+    "start": "pm2-runtime start ecosystem.config.js --env production",
+    "start:dev": "nodemon -e graphql,js --watch src src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "worker": "pm2-runtime start worker.config.js --env production",
+    "worker:dev": "nodemon --watch src/cron/worker.js src/cron/worker.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "apollo-server": "^2.11.0",
+    "bcrypt": "^4.0.1",
+    "bee-queue": "^1.2.3",
+    "dotenv": "^8.2.0",
+    "glob": "^7.1.6",
+    "graphql-middleware": "^4.0.2",
+    "graphql-redis-subscriptions": "^2.2.1",
+    "graphql-shield": "^7.2.6",
+    "graphql-tools": "^5.0.0",
+    "ioredis": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "lodash": "^4.17.15",
+    "merge-graphql-schemas": "^1.7.6",
+    "moment": "^2.26.0",
+    "nodemon": "^2.0.2",
+    "pm2": "^4.2.3",
+    "prisma-client-lib": "^1.34.10",
+    "redis": "^3.0.2"
+  }
+}

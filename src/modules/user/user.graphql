@@ -1,0 +1,41 @@
+
+type User {
+    id: ID!
+    email: String!
+    password: String
+    name: String
+    updatedAt: DateTime
+    createdAt: DateTime
+}
+
+input UserWhereInput {
+    id: ID
+    email: String
+}
+
+input UserCreateInput {
+    #example property
+    email: String!
+    password: String!
+    name: String
+}
+
+input UserLoginInput {
+    email: String
+    password: String
+}
+
+type LoginResponse {
+    token: String
+    user: User
+}
+
+type Query {
+    user(id: ID!): User
+}
+
+type Mutation {
+    userRegister(data: UserCreateInput): User
+    # User login returns a jwt token string
+    userLogin(data: UserLoginInput): LoginResponse
+}

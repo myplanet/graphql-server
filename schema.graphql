@@ -1,0 +1,183 @@
+# A customer is a consumer of a given clite site and represents the end user
+type Customer {
+    id: ID!
+    customerId: String
+    groupId: Int
+    #  A user is associated with many sites that they may visit for a given client.
+    sites: [Sites]
+    # A user can have many variants of components.  This would be the most granular level
+    # of control available.  Through variants, a customer is associated with many components.
+    # These would be the default defined for the instance if no alternate variant is given
+    distributions: [Distribution]
+    variants: [Variant]
+}
+
+# Client will have many sites that they manage
+type Client {
+    id: ID!
+    name: String
+    sites: [Site]
+}
+
+# A site is managed by client, and has many components
+type Site {
+    id: ID!
+    name: String
+    client: Client
+    #  A site has many component instances associated with it.
+    components: [Components]
+    # Instances are the exact utilizations of the components on the site.
+    intances: [Instances]
+    users: [User]
+    # a site has a number of customers, who are the end consumers of the site
+    customers: [Customer]
+}
+
+# A component is an atomic unit of a design system.
+# A component can belong to many sites, as many sites may deploy the same component design
+# This should enable us to modify component styles across multiple sites as well as a single site
+type Component {
+    id: ID!
+    name: String
+    sites: [Site]
+    # Every component should have at least one variant, the default variant
+    variants: [Variant]!
+}
+
+#  A component would have a number of instances, each instance is a unique use of a component
+# on a given site.  So two uses of the Button component would be two instances.
+type Instance {
+    id: ID!
+    # name is a unique namespaced identifer of the instance.  This would be determined by the developer and coded
+    # into the component as a prop.
+    name: String!
+    component: Component
+    site: Site
+    # an instance variant is the style overridding by a developer in development when they create a unique instance
+    # of a component
+    variants: [Variants]
+    # every instance will have many distributions, one for every user.
+    distributions: [Distributions]
+}
+
+
+#  This is the lowest level of a component, and represents a component instance on a single customers
+# computer.  This terminology is currently not fixed, but it is here used to represent a single instance
+# of a single instance.  This would also likely be the level that a single customers browser would look up
+# what style their component should have.
+type Distribution {
+    id: ID!
+    # A distribution is an instantiation of an instance of a componeny.
+    instance: Instance
+    # It is associated with a single customer, as this represents the component instance on the omers cust machine.
+    customer: Customer
+    # This level is associated with a single variant.
+    # A service or mechanism would be used  that if the distribution does not have an overriding variant
+    # The API would look "up the tree" to find the nearest default variant to serve up.
+    variant: Variant
+    # This identifer could be composed of the unique "fingerprint" of the distribution.
+    #  eg. #client-site-componentName-instanceName-customerId
+    identifier: String
+}
+
+# It is likely that this object will be quite large.  Some properties, like text, will be unique to certain
+# components, such as buttons.  Unordered lists would not have internal text, but might have headers, etc.
+# Is there a away we can be more granular or modular with this, or just have one giant variants object that
+# store all this data?
+
+# Hundreds of variants could in theory exist for any Instance, or Component.  A variant can apply at the Component
+# level, which would be the default styling, or at the instance level as a unique use of the component,
+# or at the distribution level as a variant served up to an individual customer (or group of customers).
+type Variant {
+    id: ID!
+    name: String
+    # This determines if this variant is the fallback default
+    default: Boolean
+    #  Used to track if a variant is in use or not.
+    active: Boolean
+    # track history of the variant in case it is useful.
+    componentHistory: [Component]
+    component: Component
+    instance: Instance
+    # A variant is assigned to a distribution, and we can look up a given variant for a distribution
+    distribution: Distribution
+    # Do we want to associate the variant to the customer at this level? This would allow us to 
+    # modify variants at the individual customer level if needed, but perhaps is overwritten at higher levels?
+    customer: Customer
+
+    # UI properties
+    text: String
+    backgroundColor: String
+    borderRadius: String
+}
+
+input VariantInput {
+    name: String
+    distributionId: ID!
+    text: String,
+    backgroundColor: String,
+    borderRadius: String
+}
+
+enum Event {
+    TOUCH
+    CLICK
+    SCROLL
+    HOVER
+}
+
+# Where we collect the engagement data for components.
+type Engagament {
+    id: ID!
+    event: Event
+    url: String
+
+    # Do we want to store the various levels right here of engagement data?
+    # or do we simply want to store the distribution the engagament occured on
+    #and extract the other levels from it?
+    instance: Instance
+    distribution: Distribution
+    customer: Customer
+}
+
+input EngagamentInput {
+    event: Event!
+    url: String
+
+    # Do we want to store the various levels right here of engagement data?
+    # or do we simply want to store the distribution the engagament occured on
+    #and extract the other levels from it?
+    distributionId: ID!
+    customerId: ID!
+}
+
+type Query {
+    # May not even need these distribution queries, as the register mutation returns the style.
+    getDistributionById(id: ID!): Distribution,
+    # a distribution can be fetched based upon the fingerprint identifier
+    getDistributionByIdentifier: Identifer,
+    # get site by ID.  Site can return all instances of components on the site in order to give the application
+    # a record of things like instance ID's
+    getSite(id: ID!): Site
+}
+
+type Mutation {
+    # Ensure that the customer exists in the database.  If they dont' it creates them.  Returns basic data
+    registerCustomer(customerId: ID!, siteId: ID!): Customer
+    # each component instance needs to register itself upon load.  If the distribution doesn't exist yet for that user
+    # it creates it utilizing the instanceID of the component; otherwise, it will send back the information, 
+    # including the style variant associated with it.
+    registerDistribution(customerId: ID!, name: String!, instanceId: ID!): Distribution
+
+    newEnagagament(engagament: EngagamentInput) : Engagament
+    
+    # Dashboard API mutation. 
+    # Every update to an instance actually just creates a new variant for the instance. This tracks old instances.
+    newVariant(variantInput: VariantInput)
+}
+
+type Subscription {
+    # this subscription will receive any updates to a distributions style variant.  This will allow for 
+    # "live updating" styles whenever they are modifiedf via the dashboard API.
+    newDistributionVariant(distributionId: ID!): Distribution
+}
