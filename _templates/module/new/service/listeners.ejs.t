@@ -10,7 +10,7 @@ unless_exists: true
 
 const { <%= NAME %>_CREATE } = require('./<%= name %>.constants');
 
-module.exports = function(pubsub, services) {
+module.exports = function({ pubsub }, services) {
   // Get the subscriber directly from the redis graphql pubsub
 
   pubsub.subscribe(<%= NAME %>_CREATE,  data => {

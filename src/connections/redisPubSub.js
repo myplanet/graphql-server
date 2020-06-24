@@ -10,7 +10,10 @@ const options = {
   }
 };
 
-module.exports =  new RedisPubSub({
-  publisher: new Redis(process.env.REDIS_URL, options),
-  subscriber: new Redis(process.env.REDIS_URL, options)
-});
+module.exports =  {
+  name: 'pubsub',
+  interface: new RedisPubSub({
+    publisher: new Redis(process.env.REDIS_URL, options),
+    subscriber: new Redis(process.env.REDIS_URL, options)
+  })
+}

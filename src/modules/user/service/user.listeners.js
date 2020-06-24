@@ -6,7 +6,7 @@
 
 const { USER_CREATE } = require('./user.constants');
 
-module.exports = function(pubsub, services) {
+module.exports = function({ pubsub }, services) {
   // Get the subscriber directly from the redis graphql pubsub
 
   pubsub.subscribe(USER_CREATE,  data => {

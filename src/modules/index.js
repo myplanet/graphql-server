@@ -30,24 +30,17 @@ const glob = require( 'glob' );
 const { fileLoader, mergeTypes, mergeResolvers } = require('merge-graphql-schemas');
 
 
-// ██████╗  █████╗ ████████╗ █████╗ ██████╗  █████╗ ███████╗███████╗███████╗
-// ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔════╝██╔════╝
-// ██║  ██║███████║   ██║   ███████║██████╔╝███████║███████╗█████╗  ███████╗
-// ██║  ██║██╔══██║   ██║   ██╔══██║██╔══██╗██╔══██║╚════██║██╔══╝  ╚════██║
-// ██████╔╝██║  ██║   ██║   ██║  ██║██████╔╝██║  ██║███████║███████╗███████║
-// ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
+//  ██████╗ ██████╗ ███╗   ██╗███╗   ██╗███████╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
+// ██╔════╝██╔═══██╗████╗  ██║████╗  ██║██╔════╝██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+// ██║     ██║   ██║██╔██╗ ██║██╔██╗ ██║█████╗  ██║        ██║   ██║██║   ██║██╔██╗ ██║███████╗
+// ██║     ██║   ██║██║╚██╗██║██║╚██╗██║██╔══╝  ██║        ██║   ██║██║   ██║██║╚██╗██║╚════██║
+// ╚██████╗╚██████╔╝██║ ╚████║██║ ╚████║███████╗╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
+//  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
 
 
-// Get generated prisma client
-const { prisma } = require('./../../database/generated/prisma-client');
-
-// Get redis connect instance from config
-const pubsub = require('../connections/redisPubSub');
-
-const connections = {
-  prisma,
-  pubsub
-};
+// connections are autoloaded inside the connections folder.  The complete object is imported here
+// to be passed to the services, and exportd for inclusion on the main context as well.
+const connections = require('./../connections');
 
 // ████████╗██╗   ██╗██████╗ ███████╗██████╗ ███████╗███████╗███████╗
 // ╚══██╔══╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██╔════╝██╔════╝██╔════╝
@@ -88,10 +81,12 @@ const resolvers = mergeResolvers(resolversArray);
 
 // Load up all services by reducing the chosen files, requiring them, and 
 // passng the prisma instance and the pubsub to the service.
-const services = glob.sync( 'src/modules/**/service' ).reduce(function(acc, file) {
+
+
+const services = glob.sync(path.join(__dirname, 'src/modules/**/service')).reduce(function(acc, file) {
   // Services are given access to the pubsub and the prisma instance.
 
-  const service = require(path.resolve( file ))(prisma, pubsub);
+  const service = require(path.resolve( file ))(connections);
 
   // Get the name to assign to the model based on the file name inside the modules folder.
   const name = file.match(/(?<=src\/modules\/)(.*)(?=\/)/)[0];
@@ -127,8 +122,8 @@ Object.keys(services).forEach(name => {
 
 // Find all event listeners in modules, and load them up with the created event pubsub.
 // Also give the pubsub access to the service if it needs it.
-glob.sync( './**/*.listeners.js' ).forEach( function( file ) {
-  require(path.resolve( file ))(pubsub, services, prisma);
+glob.sync(path.join(__dirname, './**/*.listeners.js')).forEach( function( file ) {
+  require(path.resolve( file ))(connections, services);
 });
 
 
@@ -142,7 +137,7 @@ glob.sync( './**/*.listeners.js' ).forEach( function( file ) {
 // Here we run through and grab any custom rules that might be defined in a module so they can be
 // injected into the resolvers at runtime by our permission system.
 
-const rules = glob.sync( './**/*.rules.js' ).reduce((acc, file ) => {
+const rules = glob.sync(path.join(__dirname, './**/*.rules.js')).reduce((acc, file ) => {
   const moduleRules = require(path.resolve( file ));
 
   return {...moduleRules, ...acc }
@@ -162,7 +157,7 @@ const rules = glob.sync( './**/*.rules.js' ).reduce((acc, file ) => {
 // generate all the permissions.
 
 const createPermissions = rules => {
-  return glob.sync( './**/*.permissions.js' ).reduce((acc, file ) => {
+  return glob.sync(path.join(__dirname, './**/*.permissions.js')).reduce((acc, file ) => {
     const permissions = require(path.resolve( file ))(rules);
   
     return {...permissions, ...acc }
@@ -176,6 +171,5 @@ module.exports = {
   rules,
   createPermissions,
   // these are exported for possbile lower level access in resolvers.
-  prisma,
-  pubsub,
+  connections
 }

@@ -1,4 +1,4 @@
-module.exports = function(pubsub) {
+module.exports = function({ pubsub }) {
   const subscriber = pubsub.getSubscriber();
   
   subscriber.on('error', (err) => {

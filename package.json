@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "pm2-runtime start ecosystem.config.js --env production",
-    "start:dev": "nodemon -e graphql,js --watch src src/index.js",
+    "dev": "nodemon -e graphql,js --watch src src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "worker": "pm2-runtime start worker.config.js --env production",
     "worker:dev": "nodemon --watch src/cron/worker.js src/cron/worker.js"

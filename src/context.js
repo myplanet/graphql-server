@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken")
 
-const { pubsub, prisma, services } = require('./modules');
+const { connections, services } = require('./modules');
 const constants = require('./config/constants');
 const workerQueue = require('./workers');
 
@@ -50,9 +50,7 @@ const createContext = async ({ req, connection }) => {
     auth: { user },
     ...context,
     constants, 
-    prisma,
-    // Might abstract away the raw pubsub and use a higher level abstraction.
-    pubsub, 
+    ...connections,
     // Attach all services to the context for use in the resolvers
     ...services,
     // tihs namespace is temporary.  There is likely a better name for this service.

@@ -33,7 +33,7 @@ const createQueries = require('./<%= name %>.queries');
 const createSubscriptions = require('./<%= name %>.subscriptions');
 const createType = require('./<%= name %>.type');
 
-module.exports = (prisma, pubsub) => services => {
+module.exports = ({ prisma, pubsub }) => services => {
   const publishers = createPublishers(pubsub);
   const queries = createQueries(prisma, publishers, services);
   const mutations = createMutations(prisma, publishers, services);
